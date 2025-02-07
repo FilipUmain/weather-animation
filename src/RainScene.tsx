@@ -5,10 +5,10 @@ const RainScene: React.FC = () => {
   const mountRef = useRef<HTMLDivElement | null>(null);
 
   // Adjustable parameters
-  const fogDensity = 0.003; //Cloud and rain visibility ranging from 0.006 to
+  const fogDensity = 0.002; //Cloud and rain visibility ranging from 0.006 (no clouds) to 0.001 (dense clouds) EXTRA: 0.5 to hide rain and clouds
   const cameraPosition = { x: 0, y: 0, z: 1 };
   const cameraRotation = { x: 1.16, y: -0.12, z: 0.27 };
-  const ambientLightIntensity = 0.5;
+  const ambientLightIntensity = 1;
   const directionalLightIntensity = 0.5;
   const flashColor = 0x062d89;
   const flashIntensity = 30;
