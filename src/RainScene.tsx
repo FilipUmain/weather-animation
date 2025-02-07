@@ -58,6 +58,8 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
           ? 0xffffff
           : time === "night"
           ? 0x555555
+          : environment === "rainy" && time === "afternoon"
+          ? 0xffffff // White raindrop color for rainy afternoon
           : 0xaaaaaa; // Raindrop color
       let rainSize;
       switch (environment) {
@@ -77,14 +79,14 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
           ? 0
           : 3;
 
-      const cloudOpacity = environment === "clear" ? 0.2 : 1;
+      const cloudOpacity = environment === "clear" ? 0.3 : 1;
       let cloudCount;
       switch (environment) {
         case "clear":
           cloudCount = 10;
           break;
         case "cloudy":
-          cloudCount = time === "morning" ? 15 : 100;
+          cloudCount = time === "morning" ? 15 : 30;
           break;
         case "rainy":
           cloudCount = 40;
