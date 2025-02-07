@@ -5,7 +5,7 @@ import RainScene from "./RainScene";
 function App() {
   return (
     <div className="App">
-      <RainScene />
+      <RainScene environment="snowy" time="afternoon" />
     </div>
   );
 }

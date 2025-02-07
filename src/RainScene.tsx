@@ -1,7 +1,14 @@
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
+type Environment = "clear" | "cloudy" | "rainy" | "snowy";
+type Time = "morning" | "afternoon" | "evening" | "night";
 
-const RainScene: React.FC = () => {
+interface RainSceneProps {
+  environment?: Environment;
+  time?: Time;
+}
+
+const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
   //   const green = "#22577A";
   //   const blue = "#38A3A5";
@@ -20,13 +27,84 @@ const RainScene: React.FC = () => {
   const flashIntensity = 30;
   const flashDistance = 10;
   const flashDecay = 1.7;
-  const rainCount = 10000; // Number of raindrops ranging from 0( no rain) to 10000 (heavy rain), 500 for light rain
-  const rainColor = 0xaaaaaa; // Raindrop color
-  const rainSize = 0.1; // Raindrop size going from 0.1 to 1, 0.1 being rain and 1 being snow, higher the number, the closer to snow
+  let rainCount;
+  switch (environment) {
+    case "clear":
+      rainCount = 0;
+      break;
+    case "rainy":
+      rainCount = 10000;
+      break;
+    case "snowy":
+      rainCount = 5000;
+      break;
+    default:
+      rainCount = 500; // Default to light rain
+  }
+  const rainColor = environment === "snowy" ? 0xffffff : 0xaaaaaa; // Raindrop color
+  let rainSize;
+  switch (environment) {
+    case "rainy":
+      rainSize = 0.1;
+      break;
+    case "snowy":
+      rainSize = 1;
+      break;
+    default:
+      rainSize = 0.1; // Default to rain size
+  }
   const cloudOpacity = 1; // Cloud opacity
-  const cloudCount = 25; // Number of clouds (Max 200)
-  const skyColor = 0x87ceeb; // Sky color in hex, 0x11111f for night sky and 0x87ceeb for day sky (light blue)
-  const cloudColor = 0xffffff; // Cloud color in hex, 0x111111 for dark clouds and 0xffffff for white clouds
+  let cloudCount;
+  switch (environment) {
+    case "clear":
+      cloudCount = 0;
+      break;
+    case "cloudy":
+      cloudCount = 25;
+      break;
+    case "rainy":
+      cloudCount = 15;
+      break;
+    case "snowy":
+      cloudCount = 20;
+      break;
+    default:
+      cloudCount = 25; // Default to cloudy
+  }
+  let skyColor;
+  switch (time) {
+    case "morning":
+      skyColor = 0xffd700; // Yellow
+      break;
+    case "afternoon":
+      skyColor = 0x87ceeb; // Light blue
+      break;
+    case "evening":
+      skyColor = 0xff69b4; // Pink
+      break;
+    case "night":
+      skyColor = 0x11111f; // Dark blue
+      break;
+    default:
+      skyColor = 0x87ceeb; // Default to light blue
+  }
+  let cloudColor;
+  switch (time) {
+    case "morning":
+      cloudColor = 0xffe4b5; // Light yellow
+      break;
+    case "afternoon":
+      cloudColor = 0xffffff; // White
+      break;
+    case "evening":
+      cloudColor = 0xffc0cb; // Light pink
+      break;
+    case "night":
+      cloudColor = 0x111111; // Dark
+      break;
+    default:
+      cloudColor = 0xffffff; // Default to white
+  }
   useEffect(() => {
     // Scene setup
     const scene = new THREE.Scene();
