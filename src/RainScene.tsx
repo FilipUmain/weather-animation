@@ -35,6 +35,13 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
       let rainCount;
       switch (environment) {
         case "clear":
+          if (time === "night") {
+            rainCount = 500;
+          } else {
+            rainCount = 0;
+          }
+          break;
+        case "cloudy":
           rainCount = 0;
           break;
         case "rainy":
@@ -46,8 +53,12 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
         default:
           rainCount = 500;
       }
-
-      const rainColor = time === "night" ? 0x555555 : 0xaaaaaa; // Raindrop color
+      const rainColor =
+        environment === "clear" && time === "night"
+          ? 0xffffff
+          : time === "night"
+          ? 0x555555
+          : 0xaaaaaa; // Raindrop color
       let rainSize;
       switch (environment) {
         case "rainy":
@@ -59,16 +70,21 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
         default:
           rainSize = 0.1;
       }
-      const rainVelocity = environment === "snowy" ? 0.5 : 3;
+      const rainVelocity =
+        environment === "snowy"
+          ? 0.5
+          : environment === "clear" && time === "night"
+          ? 0
+          : 3;
 
-      const cloudOpacity = 1;
+      const cloudOpacity = environment === "clear" ? 0.2 : 1;
       let cloudCount;
       switch (environment) {
         case "clear":
-          cloudCount = 0;
+          cloudCount = 10;
           break;
         case "cloudy":
-          cloudCount = 25;
+          cloudCount = time === "morning" ? 15 : 100;
           break;
         case "rainy":
           cloudCount = 40;
@@ -83,13 +99,13 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
       let skyColor;
       switch (time) {
         case "morning":
-          skyColor = "#eab285";
+          skyColor = "#add8e6";
           break;
         case "afternoon":
           skyColor = 0x87ceeb;
           break;
         case "evening":
-          skyColor = "#e3829b";
+          skyColor = "#4682b4";
           break;
         case "night":
           skyColor = 0x11111f;
@@ -97,7 +113,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
         default:
           skyColor = 0x87ceeb;
       }
-      if (environment === "rainy") {
+      if (environment === "rainy" || environment === "snowy") {
         if (time === "night") {
           skyColor = 0x11111f;
         } else if (time === "afternoon") {
@@ -113,7 +129,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
           cloudColor = 0xffe4b5;
           break;
         case "afternoon":
-          cloudColor = 0xffffff;
+          cloudColor = "gray";
           break;
         case "evening":
           cloudColor = 0xffc0cb;
@@ -124,7 +140,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
         default:
           cloudColor = 0xffffff;
       }
-      if (environment === "rainy") {
+      if (environment === "rainy" || environment === "snowy") {
         cloudColor = time === "night" ? 0x111111 : "#333333";
       }
 
@@ -277,7 +293,9 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
         }
 
         rainGeo.attributes.position.needsUpdate = true;
-        rain.rotation.y += 0.002;
+        if (environment === "snowy") {
+          rain.rotation.y += 0.002;
+        }
 
         if (flashRef.current) {
           if (Math.random() > 0.96 || flashRef.current.power > 100) {

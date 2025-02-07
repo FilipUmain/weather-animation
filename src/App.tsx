@@ -14,15 +14,17 @@ function App() {
     <div className="App">
       <div className="controls">
         <div>
-          <h3>Select Environment:</h3>
-          {(["clear", "cloudy", "rainy", "snowy"] as Environment[]).map((env) => (
-            <button key={env} onClick={() => setEnvironment(env)}>
-              {env}
-            </button>
-          ))}
+          <h3>Weather</h3>
+          {(["clear", "cloudy", "rainy", "snowy"] as Environment[]).map(
+            (env) => (
+              <button key={env} onClick={() => setEnvironment(env)}>
+                {env}
+              </button>
+            )
+          )}
         </div>
         <div>
-          <h3>Select Time:</h3>
+          <h3>Time</h3>
           {(["morning", "afternoon", "evening", "night"] as Time[]).map((t) => (
             <button key={t} onClick={() => setTime(t)}>
               {t}
