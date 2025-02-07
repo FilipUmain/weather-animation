@@ -1,0 +1,38 @@
+body, html, #root, .App {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #282c34;
+}
+
+.snow {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.snowflake {
+  animation: fall linear infinite;
+  opacity: 0.8;
+}
+
+@keyframes fall {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(600px);
+  }
+}
+
+.snowflake:nth-child(odd) {
+  animation-duration: 10s;
+}
+
+.snowflake:nth-child(even) {
+  animation-duration: 15s;
+}
