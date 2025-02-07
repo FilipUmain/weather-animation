@@ -5,6 +5,7 @@
     "jsx": "react",
     "strict": true,
     "esModuleInterop": true,
+    "moduleResolution": "node",
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
