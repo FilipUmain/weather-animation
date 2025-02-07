@@ -14,11 +14,11 @@ const RainScene: React.FC = () => {
   const flashIntensity = 30;
   const flashDistance = 500;
   const flashDecay = 1.7;
-  const rainCount = 9500;
-  const rainColor = 0xaaaaaa;
-  const rainSize = 0.1;
-  const cloudOpacity = 0.55;
-  const cloudCount = 25;
+  const rainCount = 9500; // Number of raindrops
+  const rainColor = 0xaaaaaa; // Raindrop color
+  const rainSize = 0.1; // Raindrop size 
+  const cloudOpacity = 0.6; // Cloud opacity
+  const cloudCount = 25; // Number of clouds (Max 200)
 
   useEffect(() => {
     // Scene setup
