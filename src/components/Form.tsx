@@ -25,7 +25,7 @@ const Form = () => {
       console.log('Response from backend:', response.data);
 
       // Set the response message to display it
-      setResponseMessage(response.data.message || 'Success!'); // Assuming the response has a 'message' field
+      setResponseMessage(response.data.message || 'Success!');
     } catch (error) {
       console.error('Error sending data to backend:', error);
       setResponseMessage('Error sending data to backend');
