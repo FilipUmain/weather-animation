@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
+
 type Environment = "clear" | "cloudy" | "rainy" | "snowy";
 type Time = "morning" | "afternoon" | "evening" | "night";
 
@@ -21,8 +22,9 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
   const fogDensity = 0.0015; //Cloud and rain visibility ranging from 0.006 (no clouds) to 0.001 (dense clouds) EXTRA: 0.5 to hide rain and clouds
   const cameraPosition = { x: 0, y: 0, z: 1 };
   const cameraRotation = { x: 1.16, y: -0.12, z: 0.27 };
-  const ambientLightIntensity = 0.1; // how thick the clouds will be, 0.1 for light clouds and 100 for dense clouds
-  const directionalLightIntensity = 50; // Light intensity ranging from 0 (no light) to 50 (brightest light) color intensity for the clouds at 50 with cloudColor as white makes them white, suited for when cloudy but daytime and sunny
+  const ambientLightIntensity = time === "morning" ? 0.02 : 0.1; // how thick the clouds will be, 0.02 for light clouds in the morning and 0.1 for other times
+  const directionalLightIntensity =
+    time === "morning" ? 20 : time === "evening" ? 30 : 50; // Light intensity ranging from 0 (no light) to 50 (brightest light) color intensity for the clouds at 50 with cloudColor as white makes them white, suited for when cloudy but daytime and sunny
   const flashColor = 0x062d89;
   const flashIntensity = 30;
   const flashDistance = 10;
@@ -41,7 +43,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
     default:
       rainCount = 500; // Default to light rain
   }
-  const rainColor = environment === "snowy" ? 0xffffff : 0xaaaaaa; // Raindrop color
+  const rainColor = time === "night" ? 0xaaaaaa : 0xffffff; // Raindrop color
   let rainSize;
   switch (environment) {
     case "rainy":
@@ -53,6 +55,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
     default:
       rainSize = 0.1; // Default to rain size
   }
+  const rainVelocity = environment === "snowy" ? 0.5 : 3; // Slower velocity for snow
   const cloudOpacity = 1; // Cloud opacity
   let cloudCount;
   switch (environment) {
@@ -63,7 +66,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
       cloudCount = 25;
       break;
     case "rainy":
-      cloudCount = 15;
+      cloudCount = 40;
       break;
     case "snowy":
       cloudCount = 20;
@@ -74,13 +77,13 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
   let skyColor;
   switch (time) {
     case "morning":
-      skyColor = 0xffd700; // Yellow
+      skyColor = "#eab285"; // Yellow
       break;
     case "afternoon":
       skyColor = 0x87ceeb; // Light blue
       break;
     case "evening":
-      skyColor = 0xff69b4; // Pink
+      skyColor = "#e3829b"; // Pink
       break;
     case "night":
       skyColor = 0x11111f; // Dark blue
@@ -88,6 +91,16 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
     default:
       skyColor = 0x87ceeb; // Default to light blue
   }
+  if (environment === "rainy") {
+    if (time === "night") {
+      skyColor = 0x11111f;
+    } else if (time === "afternoon") {
+      skyColor = "#888888"; // Slightly lighter dark gray
+    } else {
+      skyColor = "#333333";
+    }
+  }
+
   let cloudColor;
   switch (time) {
     case "morning":
@@ -104,6 +117,9 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
       break;
     default:
       cloudColor = 0xffffff; // Default to white
+  }
+  if (environment === "rainy") {
+    cloudColor = time === "night" ? 0x111111 : "#333333";
   }
   useEffect(() => {
     // Scene setup
@@ -214,11 +230,9 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
       const positions = rainGeo.attributes.position.array as Float32Array;
 
       for (let i = 0; i < rainCount; i++) {
-        velocities[i] -= 3 * Math.random() * 1;
-        positions[i * 3 + 1] += velocities[i];
+        positions[i * 3 + 1] -= rainVelocity; // Use rainVelocity for movement
         if (positions[i * 3 + 1] < -100) {
           positions[i * 3 + 1] = 100;
-          velocities[i] = 0;
         }
       }
 
@@ -235,6 +249,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
         }
         flash.power = 50 + Math.random() * 500;
       }
+      flash.power *= 0.97; // Gradually decrease the power
     };
 
     animate();
@@ -255,7 +270,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
         mountRef.current.removeChild(renderer.domElement);
       }
     };
-  }, []);
+  }, [environment, time]);
 
   return <div ref={mountRef} />;
 };
