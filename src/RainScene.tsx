@@ -282,7 +282,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
         requestAnimationFrame(animate);
 
         cloudParticles.forEach((p) => {
-          p.rotation.z -= 0.002;
+          p.rotation.z -= 0.001;
         });
 
         const positions = rainGeo.attributes.position.array as Float32Array;
