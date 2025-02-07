@@ -4,10 +4,26 @@ import * as THREE from "three";
 const RainScene: React.FC = () => {
   const mountRef = useRef<HTMLDivElement | null>(null);
 
+  // Adjustable parameters
+  const fogDensity = 0.003; //Cloud and rain visibility ranging from 0.006 to
+  const cameraPosition = { x: 0, y: 0, z: 1 };
+  const cameraRotation = { x: 1.16, y: -0.12, z: 0.27 };
+  const ambientLightIntensity = 0.5;
+  const directionalLightIntensity = 0.5;
+  const flashColor = 0x062d89;
+  const flashIntensity = 30;
+  const flashDistance = 500;
+  const flashDecay = 1.7;
+  const rainCount = 9500;
+  const rainColor = 0xaaaaaa;
+  const rainSize = 0.1;
+  const cloudOpacity = 0.55;
+  const cloudCount = 25;
+
   useEffect(() => {
     // Scene setup
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x11111f, 0.002);
+    scene.fog = new THREE.FogExp2(0x11111f, fogDensity);
 
     // Camera setup
     const camera = new THREE.PerspectiveCamera(
@@ -16,10 +32,8 @@ const RainScene: React.FC = () => {
       1,
       1000
     );
-    camera.position.z = 1;
-    camera.rotation.x = 1.16;
-    camera.rotation.y = -0.12;
-    camera.rotation.z = 0.27;
+    camera.position.set(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+    camera.rotation.set(cameraRotation.x, cameraRotation.y, cameraRotation.z);
 
     // Renderer setup
     const renderer = new THREE.WebGLRenderer();
@@ -32,19 +46,26 @@ const RainScene: React.FC = () => {
     }
 
     // Lights
-    const ambient = new THREE.AmbientLight(0x555555);
+    const ambient = new THREE.AmbientLight(0x555555, ambientLightIntensity);
     scene.add(ambient);
 
-    const directionalLight = new THREE.DirectionalLight(0xffeedd);
+    const directionalLight = new THREE.DirectionalLight(
+      0xffeedd,
+      directionalLightIntensity
+    );
     directionalLight.position.set(0, 0, 1);
     scene.add(directionalLight);
 
-    const flash = new THREE.PointLight(0x062d89, 30, 500, 1.7);
+    const flash = new THREE.PointLight(
+      flashColor,
+      flashIntensity,
+      flashDistance,
+      flashDecay
+    );
     flash.position.set(200, 300, 100);
     scene.add(flash);
 
     // Rain setup
-    const rainCount = 9500;
     const rainGeo = new THREE.BufferGeometry();
     const positions = new Float32Array(rainCount * 3);
     const velocities = new Float32Array(rainCount);
@@ -59,8 +80,8 @@ const RainScene: React.FC = () => {
     rainGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 
     const rainMaterial = new THREE.PointsMaterial({
-      color: 0xaaaaaa,
-      size: 0.1,
+      color: rainColor,
+      size: rainSize,
       transparent: true,
     });
 
@@ -79,7 +100,7 @@ const RainScene: React.FC = () => {
           transparent: true,
         });
 
-        for (let p = 0; p < 25; p++) {
+        for (let p = 0; p < cloudCount; p++) {
           const cloud = new THREE.Mesh(cloudGeo, cloudMaterial);
           cloud.position.set(
             Math.random() * 800 - 400,
@@ -89,7 +110,7 @@ const RainScene: React.FC = () => {
           cloud.rotation.x = 1.16;
           cloud.rotation.y = -0.12;
           cloud.rotation.z = Math.random() * 2 * Math.PI;
-          cloud.material.opacity = 0.55;
+          cloud.material.opacity = cloudOpacity;
           cloudParticles.push(cloud);
           scene.add(cloud);
         }
