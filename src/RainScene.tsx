@@ -41,13 +41,13 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
           rainCount = 10000;
           break;
         case "snowy":
-          rainCount = 5000;
+          rainCount = 10000;
           break;
         default:
           rainCount = 500;
       }
 
-      const rainColor = time === "night" ? 0xaaaaaa : 0xffffff;
+      const rainColor = time === "night" ? 0x555555 : 0xaaaaaa; // Raindrop color
       let rainSize;
       switch (environment) {
         case "rainy":
@@ -176,6 +176,26 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
       scene.add(flash);
       flashRef.current = flash;
 
+      // Function to create a circular texture
+      function createCircleTexture(size: number, color: string): THREE.Texture {
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const context = canvas.getContext("2d");
+
+        if (context) {
+          context.fillStyle = color;
+          context.beginPath();
+          context.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+          context.fill();
+        }
+
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      // Create a circular texture
+      const circleTexture = createCircleTexture(64, "white"); // Adjust size and color as needed
+
       // Rain setup
       const rainGeo = new THREE.BufferGeometry();
       const positions = new Float32Array(rainCount * 3);
@@ -193,7 +213,10 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
       const rainMaterial = new THREE.PointsMaterial({
         color: rainColor,
         size: rainSize,
+        map: circleTexture, // Apply the generated snowflake-like texture
         transparent: true,
+        alphaTest: 0.5, // Ensure transparency works correctly
+        sizeAttenuation: true, // Enable size attenuation for perspective effect
       });
 
       const rain = new THREE.Points(rainGeo, rainMaterial);
@@ -226,7 +249,6 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
             cloudParticles.push(cloud);
             scene.add(cloud);
           }
-
           // Start animation after clouds are loaded
           animate();
         }
@@ -248,11 +270,9 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
         const positions = rainGeo.attributes.position.array as Float32Array;
 
         for (let i = 0; i < rainCount; i++) {
-          velocities[i] -= rainVelocity * Math.random();
-          positions[i * 3 + 1] += velocities[i];
+          positions[i * 3 + 1] -= rainVelocity; // Use a consistent velocity
           if (positions[i * 3 + 1] < -100) {
-            positions[i * 3 + 1] = 100;
-            velocities[i] = 0;
+            positions[i * 3 + 1] = 300;
           }
         }
 
@@ -270,6 +290,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
             }
             flashRef.current.power = 50 + Math.random() * 500;
           }
+          flashRef.current.power *= 0.97; // Gradually decrease the power
         }
       };
 
