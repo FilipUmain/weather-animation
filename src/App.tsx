@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import useWebSocket, { ReadyState } from "react-use-websocket";
 import "./App.css";
 import RainScene from "./RainScene";
-import WebSocketComponent from "./components/WebSocket";
 
 type Environment = "clear" | "cloudy" | "rainy" | "snowy";
 type Time = "morning" | "afternoon" | "evening" | "night";
@@ -10,7 +10,39 @@ function App() {
   const [environment, setEnvironment] = useState<Environment>("snowy");
   const [time, setTime] = useState<Time>("afternoon");
 
-  console.log(environment, time);
+  // WebSocket URL
+  const socketUrl = "wss://hex2025.fly.dev/ws";
+
+  // Use the useWebSocket hook
+  const { lastMessage, readyState } = useWebSocket(socketUrl);
+
+  // State to store parsed data
+  const [parsedData, setParsedData] = useState<any>(null);
+
+  // Handle incoming messages
+  useEffect(() => {
+    if (lastMessage !== null) {
+      console.log('Received message:', lastMessage.data);
+      try {
+        const parsed = JSON.parse(lastMessage.data);
+        console.log(parsed);
+        setParsedData(parsed);
+      } catch (error) {
+        console.error('Error parsing message:', error);
+      }
+    }
+  }, [lastMessage]);
+
+  const connectionStatus = {
+    [ReadyState.CONNECTING]: 'Connecting',
+    [ReadyState.OPEN]: 'Open',
+    [ReadyState.CLOSING]: 'Closing',
+    [ReadyState.CLOSED]: 'Closed',
+    [ReadyState.UNINSTANTIATED]: 'Uninitiated',
+  }[readyState] || 'Unknown';
+
+  console.log('Connection Status:', connectionStatus);
+
   return (
     <div className="App">
       <div className="controls">
@@ -34,7 +66,8 @@ function App() {
         </div>
       </div>
       <RainScene environment={environment} time={time} />
-      <WebSocketComponent />
+      <p>Connection Status: {connectionStatus}</p>
+      {lastMessage ? <p>Last message: {lastMessage.data}</p> : null}
     </div>
   );
 }
