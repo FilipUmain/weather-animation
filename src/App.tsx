@@ -6,8 +6,8 @@ type Environment = "clear" | "cloudy" | "rainy" | "snowy";
 type Time = "morning" | "afternoon" | "evening" | "night";
 
 function App() {
-  const [environment, setEnvironment] = useState<Environment>("snowy");
-  const [time, setTime] = useState<Time>("afternoon");
+  const [environment, setEnvironment] = useState<Environment>("cloudy");
+  const [time, setTime] = useState<Time>("morning");
 
   console.log(environment, time);
   return (

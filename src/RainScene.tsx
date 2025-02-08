@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 type Environment = "clear" | "cloudy" | "rainy" | "snowy";
 type Time = "morning" | "afternoon" | "evening" | "night";
@@ -136,7 +137,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
           cloudColor = "gray";
           break;
         case "evening":
-          cloudColor = 0xffc0cb;
+          cloudColor = "lightgray";
           break;
         case "night":
           cloudColor = 0x111111;
@@ -174,37 +175,148 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
       if (mountRef.current) {
         mountRef.current.appendChild(renderer.domElement);
       }
-      const textureLoader = new THREE.TextureLoader();
-      textureLoader.load(
-        "https://s3-us-west-2.amazonaws.com/s.cdpn.io/17271/lroc_color_poles_1k.jpg",
-        (texture) => {
-          texture.wrapS = THREE.RepeatWrapping;
-          texture.wrapT = THREE.RepeatWrapping;
-          const geometry = new THREE.CircleGeometry(20, 64);
-          const material = new THREE.MeshBasicMaterial({
-            map: texture,
-            transparent: true,
-            opacity: 0.4,
-          });
-          const moon = new THREE.Mesh(geometry, material);
-          moon.rotation.x = Math.PI / 2.5; // Rotate the moon 90 degrees around the x-axis
-          moon.position.set(40, 570, -50); // Position the moon in the scene
-          scene.add(moon);
+      // Create a radial gradient texture for the sun effect
+      const createSunTexture = () => {
+        const size = 256;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const context = canvas.getContext("2d");
+
+        if (context) {
+          const gradient = context.createRadialGradient(
+            size / 2,
+            size / 2,
+            0,
+            size / 2,
+            size / 2,
+            size / 2
+          );
+          gradient.addColorStop(0, "rgba(255, 255, 255, 0.2)"); // White center
+          gradient.addColorStop(1, "rgba(255, 255, 255, 0)"); // Transparent edge
+
+          context.fillStyle = gradient;
+          context.fillRect(0, 0, size, size);
         }
-      );
+
+        return new THREE.CanvasTexture(canvas);
+      };
+
+      // Create a sprite for the sun effect
+      const sunTexture = createSunTexture();
+      const sunMaterial = new THREE.SpriteMaterial({ map: sunTexture });
+      const sunSprite = new THREE.Sprite(sunMaterial);
+      sunSprite.scale.set(100, 100, 2); // Adjust size to match the moon
+      sunSprite.position.set(40, 565, -50); // Match the moon's position
+      scene.add(sunSprite);
+
+      // Add the moon mesh
+      if (environment !== "cloudy") {
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.load(
+          "https://s3-us-west-2.amazonaws.com/s.cdpn.io/17271/lroc_color_poles_1k.jpg",
+          (texture) => {
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            const geometry = new THREE.CircleGeometry(20, 64);
+            const material = new THREE.MeshBasicMaterial({
+              map: texture,
+              transparent: true,
+              opacity: 0.4,
+            });
+            const moon = new THREE.Mesh(geometry, material);
+            moon.rotation.x = Math.PI / 2.5;
+            moon.position.set(40, 570, -50);
+            scene.add(moon);
+          }
+        );
+      }
+      // // Add a simple object to the scene
+      // const geometry = new THREE.SphereGeometry(0.5, 32, 32);
+      // const material = new THREE.MeshBasicMaterial({
+      //   color: 0xffffff,
+      //   transparent: true,
+      //   opacity:
+      //     environment === "cloudy" && time === "night"
+      //       ? 0
+      //       : environment === "cloudy"
+      //       ? 1
+      //       : 0,
+      // });
+      // const sphere = new THREE.Mesh(geometry, material);
+      // scene.add(sphere);
 
       // Composer setup
       const composer = new EffectComposer(renderer);
       composer.addPass(new RenderPass(scene, camera));
 
-      // Add UnrealBloomPass
-      const bloomPass = new UnrealBloomPass(
-        new THREE.Vector2(window.innerWidth, window.innerHeight),
-        20, // strength
-        10, // radius
-        0.85 // threshold
-      );
-      composer.addPass(bloomPass);
+      // Add UnrealBloomPass only when cloudy and not night
+      if (
+        (environment === "cloudy" && time !== "night") ||
+        time === "morning"
+      ) {
+        const bloomPass = new UnrealBloomPass(
+          new THREE.Vector2(window.innerWidth, window.innerHeight),
+          time === "morning" ? 0 : time === "evening" ? 0.45 : 0.4, // 0 for morning, 0.1 for evening, 0.6 for afternoon
+          0.7, // Adjusted radius
+          0.9 // Lower threshold to include more bright areas
+        );
+        composer.addPass(bloomPass);
+      }
+
+      // Custom shader to tint the bloom
+      let colorShader: any = undefined;
+      if (environment === "cloudy" && time !== "night") {
+        colorShader = {
+          uniforms: {
+            tDiffuse: { value: null },
+            color: {
+              value: new THREE.Color(
+                time === "afternoon"
+                  ? 0xd3d3d3 // Super light gray for afternoon
+                  : time === "morning"
+                  ? 0xffffe0 // Super light white yellow for morning
+                  : time === "evening"
+                  ? 0xffc0cb // Slightly more pink for evening
+                  : 0xffffff // White (no tint) otherwise
+              ),
+            },
+          },
+          vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+          `,
+          fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform vec3 color;
+        varying vec2 vUv;
+        void main() {
+          vec4 texel = texture2D(tDiffuse, vUv);
+          gl_FragColor = texel * vec4(color, 1.0);
+        }
+          `,
+        };
+      }
+
+      if (colorShader) {
+        const colorPass = new ShaderPass(colorShader);
+        composer.addPass(colorPass);
+      }
+      // Composer setup
+
+      // Add UnrealBloomPass only when cloudy and not night
+      if (environment === "cloudy" && time !== "night") {
+        const bloomPass = new UnrealBloomPass(
+          new THREE.Vector2(window.innerWidth, window.innerHeight),
+          0.1, // Increased strength for strong bloom
+          0.7, // Adjusted radius
+          0.9 // Lower threshold to include more bright areas
+        );
+        composer.addPass(bloomPass);
+      }
       // Lights
       const ambient = new THREE.AmbientLight(cloudColor, ambientLightIntensity);
       scene.add(ambient);
@@ -310,7 +422,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
         if (!rendererRef.current || !sceneRef.current || !cameraRef.current)
           return;
 
-        rendererRef.current.render(sceneRef.current, cameraRef.current);
+        composer.render();
         requestAnimationFrame(animate);
 
         cloudParticles.forEach((p) => {
