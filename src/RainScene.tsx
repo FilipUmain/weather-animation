@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
-
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 type Environment = "clear" | "cloudy" | "rainy" | "snowy";
 type Time = "morning" | "afternoon" | "evening" | "night";
 
@@ -22,7 +24,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
     const initScene = () => {
       // Adjustable parameters
       const fogDensity = 0.0015;
-      const cameraPosition = { x: 0, y: 0, z: 1 };
+      const cameraPosition = { x: 1, y: -10, z: 1 };
       const cameraRotation = { x: 1.16, y: -0.12, z: 0.27 };
       const ambientLightIntensity = time === "morning" ? 0.02 : 0.1;
       const directionalLightIntensity =
@@ -172,7 +174,37 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
       if (mountRef.current) {
         mountRef.current.appendChild(renderer.domElement);
       }
+      const textureLoader = new THREE.TextureLoader();
+      textureLoader.load(
+        "https://s3-us-west-2.amazonaws.com/s.cdpn.io/17271/lroc_color_poles_1k.jpg",
+        (texture) => {
+          texture.wrapS = THREE.RepeatWrapping;
+          texture.wrapT = THREE.RepeatWrapping;
+          const geometry = new THREE.CircleGeometry(20, 64);
+          const material = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            opacity: 0.4,
+          });
+          const moon = new THREE.Mesh(geometry, material);
+          moon.rotation.x = Math.PI / 2.5; // Rotate the moon 90 degrees around the x-axis
+          moon.position.set(40, 570, -50); // Position the moon in the scene
+          scene.add(moon);
+        }
+      );
 
+      // Composer setup
+      const composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+
+      // Add UnrealBloomPass
+      const bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        20, // strength
+        10, // radius
+        0.85 // threshold
+      );
+      composer.addPass(bloomPass);
       // Lights
       const ambient = new THREE.AmbientLight(cloudColor, ambientLightIntensity);
       scene.add(ambient);
