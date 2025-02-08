@@ -104,7 +104,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
       let skyColor;
       switch (time) {
         case "morning":
-          skyColor = "#add8e6";
+          skyColor = "rgb(103, 146, 162)";
           break;
         case "afternoon":
           skyColor = 0x87ceeb;
@@ -131,7 +131,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
       let cloudColor;
       switch (time) {
         case "morning":
-          cloudColor = 0xffe4b5;
+          cloudColor = "rgb(255, 228, 181)";
           break;
         case "afternoon":
           cloudColor = "gray";
@@ -147,6 +147,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
       }
       if (environment === "rainy" || environment === "snowy") {
         cloudColor = time === "night" ? 0x111111 : "#333333";
+        cloudColor = time === "morning" ? "rgb(122, 122, 122)" : 0x111111;
       }
 
       // Scene setup
@@ -222,7 +223,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
             const material = new THREE.MeshBasicMaterial({
               map: texture,
               transparent: true,
-              opacity: 0.4,
+              opacity: environment === "snowy" && time === "night" ? 0.1 : 0.4,
             });
             const moon = new THREE.Mesh(geometry, material);
             moon.rotation.x = Math.PI / 2.5;
@@ -264,47 +265,47 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
         composer.addPass(bloomPass);
       }
 
-      // Custom shader to tint the bloom
-      let colorShader: any = undefined;
-      if (environment === "cloudy" && time !== "night") {
-        colorShader = {
-          uniforms: {
-            tDiffuse: { value: null },
-            color: {
-              value: new THREE.Color(
-                time === "afternoon"
-                  ? 0xd3d3d3 // Super light gray for afternoon
-                  : time === "morning"
-                  ? 0xffffe0 // Super light white yellow for morning
-                  : time === "evening"
-                  ? 0xffc0cb // Slightly more pink for evening
-                  : 0xffffff // White (no tint) otherwise
-              ),
-            },
-          },
-          vertexShader: `
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-          `,
-          fragmentShader: `
-        uniform sampler2D tDiffuse;
-        uniform vec3 color;
-        varying vec2 vUv;
-        void main() {
-          vec4 texel = texture2D(tDiffuse, vUv);
-          gl_FragColor = texel * vec4(color, 1.0);
-        }
-          `,
-        };
-      }
+      // // Custom shader to tint the bloom
+      // let colorShader: any = undefined;
+      // if (environment === "cloudy" && time !== "night") {
+      //   colorShader = {
+      //     uniforms: {
+      //       tDiffuse: { value: null },
+      //       color: {
+      //         value: new THREE.Color(
+      //           time === "afternoon"
+      //             ? 0xd3d3d3 // Super light gray for afternoon
+      //             : time === "morning"
+      //             ? 0xffffe0 // Super light white yellow for morning
+      //             : time === "evening"
+      //             ? 0xffc0cb // Slightly more pink for evening
+      //             : 0xffffff // White (no tint) otherwise
+      //         ),
+      //       },
+      //     },
+      //     vertexShader: `
+      //   varying vec2 vUv;
+      //   void main() {
+      //     vUv = uv;
+      //     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      //   }
+      //     `,
+      //     fragmentShader: `
+      //   uniform sampler2D tDiffuse;
+      //   uniform vec3 color;
+      //   varying vec2 vUv;
+      //   void main() {
+      //     vec4 texel = texture2D(tDiffuse, vUv);
+      //     gl_FragColor = texel * vec4(color, 1.0);
+      //   }
+      //     `,
+      //   };
+      // }
 
-      if (colorShader) {
-        const colorPass = new ShaderPass(colorShader);
-        composer.addPass(colorPass);
-      }
+      // if (colorShader) {
+      //   const colorPass = new ShaderPass(colorShader);
+      //   composer.addPass(colorPass);
+      // }
       // Composer setup
 
       // Add UnrealBloomPass only when cloudy and not night
