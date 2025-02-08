@@ -1,18 +1,20 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
-import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
+// import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { SceneSettings } from "./App";
 type Environment = "clear" | "cloudy" | "rainy" | "snowy";
 type Time = "morning" | "afternoon" | "evening" | "night";
 
 interface RainSceneProps {
   environment?: Environment;
   time?: Time;
+  data: SceneSettings
 }
 
-const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
+const RainScene: React.FC<RainSceneProps> = ({ environment, time, data }) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -21,9 +23,32 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const flashRef = useRef<THREE.PointLight | null>(null);
 
+  // const [fogDensity, setFogDensity] = useState(0.0015);
+  // const [cameraPosition, setCameraPosition] = useState({ x: 1, y: -10, z: 1 });
+  // const [cameraRotation, setCameraRotation] = useState({ x: 1.16, y: -0.12, z: 0.27 });
+  // const [ambientLightIntensity, setAmbientLightIntensity] = useState(time === "morning" ? 0.02 : 0.1);
+  // const [directionalLightIntensity, setDirectionalLightIntensity] = useState(
+  //   time === "morning" ? 20 : time === "evening" ? 30 : 50
+  // );
+  // const [flashColor, setFlashColor] = useState(0x062d89);
+  // const [flashIntensity, setFlashIntensity] = useState(30);
+  // const [flashDistance, setFlashDistance] = useState(10);
+  // const [flashDecay, setFlashDecay] = useState(1.7)
+  const [rainColor, setRainColor] = useState(121212);
+  const [skyColor, setSkyColor] = useState(468282);
+  const [cloudColor, setCloudColor] = useState<string | number>("white");
+  const [rainSize, setRainSize] = useState<number>(0.1); 
+  const [rainCount, setRainCount] = useState<number>(0); 
+  const [cloudCount, setCloudCount] = useState<number>(25); // Default cloud count
+  const [cloudOpacity, setCloudOpacity] = useState<number>(1); // Default cloud opacity
+  const [rainVelocity, setRainVelocity] = useState<number>(3); // Default rain velocity
+
+
+
+
+
   useEffect(() => {
     const initScene = () => {
-      // Adjustable parameters
       const fogDensity = 0.0015;
       const cameraPosition = { x: 1, y: -10, z: 1 };
       const cameraRotation = { x: 1.16, y: -0.12, z: 0.27 };
@@ -35,121 +60,142 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
       const flashDistance = 10;
       const flashDecay = 1.7;
 
-      let rainCount;
       switch (environment) {
         case "clear":
-          if (time === "night") {
-            rainCount = 500;
-          } else {
-            rainCount = 0;
-          }
+          setRainCount(time === "night" ? 500 : 0);
           break;
         case "cloudy":
-          rainCount = 0;
+          setRainCount(0);
           break;
         case "rainy":
-          rainCount = 10000;
+          setRainCount(10000);
           break;
         case "snowy":
-          rainCount = 10000;
+          setRainCount(10000);
           break;
         default:
-          rainCount = 500;
+          setRainCount(500);
       }
-      const rainColor =
-        environment === "clear" && time === "night"
-          ? 0xffffff
-          : time === "night"
-          ? 0x555555
-          : environment === "rainy" && time === "afternoon"
-          ? 0xffffff // White raindrop color for rainy afternoon
-          : 0xaaaaaa; // Raindrop color
-      let rainSize;
+  
+      // Rain Color
+      if (environment === "clear" && time === "night") {
+        setRainColor(0xffffff); // White
+      } else if (time === "night") {
+        setRainColor(0x555555); // Dark gray
+      } else if (environment === "rainy" && time === "afternoon") {
+        setRainColor(0xffffff); // White for rainy afternoon
+      } else {
+        setRainColor(0xaaaaaa); // Default raindrop color
+      }
+  
+      // Rain Size
       switch (environment) {
         case "rainy":
-          rainSize = 0.1;
+          setRainSize(0.1);
           break;
         case "snowy":
-          rainSize = 1;
+          setRainSize(1);
           break;
         default:
-          rainSize = 0.1;
+          setRainSize(0.1);
       }
-      const rainVelocity =
-        environment === "snowy"
-          ? 0.5
-          : environment === "clear" && time === "night"
-          ? 0
-          : 3;
-
-      const cloudOpacity = environment === "clear" ? 0.3 : 1;
-      let cloudCount;
+  
+      // Rain Velocity
+      if (environment === "snowy") {
+        setRainVelocity(0.5);
+      } else if (environment === "clear" && time === "night") {
+        setRainVelocity(0);
+      } else {
+        setRainVelocity(3);
+      }
+  
+      // Cloud Opacity
       switch (environment) {
         case "clear":
-          cloudCount = 10;
+          setCloudOpacity(0.3);
           break;
         case "cloudy":
-          cloudCount = time === "morning" ? 15 : 30;
-          break;
         case "rainy":
-          cloudCount = 40;
-          break;
         case "snowy":
-          cloudCount = 20;
+          setCloudOpacity(1);
           break;
         default:
-          cloudCount = 25;
+          setCloudOpacity(1);
       }
-
-      let skyColor;
+  
+      // Cloud Count
+      switch (environment) {
+        case "clear":
+          setCloudCount(10);
+          break;
+        case "cloudy":
+          setCloudCount(time === "morning" ? 15 : 30);
+          break;
+        case "rainy":
+          setCloudCount(40);
+          break;
+        case "snowy":
+          setCloudCount(20);
+          break;
+        default:
+          setCloudCount(25);
+      }
+  
+      // Sky Color
       switch (time) {
         case "morning":
-          skyColor = "rgb(103, 146, 162)";
+          setSkyColor(6787490);
           break;
         case "afternoon":
-          skyColor = 0x87ceeb;
+          setSkyColor(8900331);
           break;
         case "evening":
-          skyColor = "#4682b4";
+            setSkyColor(4628916);
           break;
         case "night":
-          skyColor = 0x11111f;
+          setSkyColor(1118495);
           break;
         default:
-          skyColor = 0x87ceeb;
+          setSkyColor(8900331);
       }
+  
       if (environment === "rainy" || environment === "snowy") {
         if (time === "night") {
-          skyColor = 0x11111f;
+          setSkyColor(0x11111f);
         } else if (time === "afternoon") {
-          skyColor = "#888888";
+          setSkyColor(0x888888);
         } else {
-          skyColor = "#333333";
+          setSkyColor(0x333333);
         }
       }
-
-      let cloudColor;
+  
+      // Cloud Color
       switch (time) {
         case "morning":
-          cloudColor = "rgb(255, 228, 181)";
-          break;
-        case "afternoon":
-          cloudColor = "gray";
-          break;
-        case "evening":
-          cloudColor = "lightgray";
+            setCloudColor(0xffe4b5); // "rgb(255, 228, 181)"
+            break;
+          case "afternoon":
+            setCloudColor(0x808080); // "gray"
+            break;
+          case "evening":
+            setCloudColor(0xd3d3d3); // "lightgray"
           break;
         case "night":
-          cloudColor = 0x111111;
+          setCloudColor(0x111111);
           break;
         default:
-          cloudColor = 0xffffff;
+          setCloudColor(0xffffff);
       }
+  
       if (environment === "rainy" || environment === "snowy") {
-        cloudColor = time === "night" ? 0x111111 : "#333333";
-        cloudColor = time === "morning" ? "rgb(122, 122, 122)" : 0x111111;
+        if (time === "night") {
+          setCloudColor(0x111111);
+        } else if (time === "morning") {
+          setCloudColor(0x7a7a7a); // rgb(122, 122, 122)
+        } else {
+          setCloudColor(0x333333);
+        }
       }
-
       // Scene setup
       const scene = new THREE.Scene();
       scene.fog = new THREE.FogExp2(skyColor, fogDensity);
@@ -207,7 +253,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
       const sunTexture = createSunTexture();
       const sunMaterial = new THREE.SpriteMaterial({ map: sunTexture });
       const sunSprite = new THREE.Sprite(sunMaterial);
-      sunSprite.scale.set(100, 100, 2); // Adjust size to match the moon
+      sunSprite.scale.set(200, 200, 2); // Adjust size to match the moon
       sunSprite.position.set(40, 565, -50); // Match the moon's position
       scene.add(sunSprite);
 
@@ -509,7 +555,7 @@ const RainScene: React.FC<RainSceneProps> = ({ environment, time }) => {
       window.removeEventListener("resize", handleResize);
       cleanupScene();
     };
-  }, [environment, time]);
+  }, [environment, time, data, cloudColor, cloudCount, cloudOpacity, rainColor, rainCount, rainSize, rainVelocity, skyColor]);
 
   return <div ref={mountRef} />;
 };
