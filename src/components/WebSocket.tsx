@@ -3,7 +3,7 @@ import useWebSocket, { ReadyState } from 'react-use-websocket';
 
 const WebSocketComponent = () => {
   // Define the WebSocket URL
-  const socketUrl = 'https://2-hex2025.fly.dev';
+  const socketUrl = 'wss://hex2025.fly.dev/ws';
 
   // Use the useWebSocket hook
   const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl);
@@ -18,23 +18,26 @@ const WebSocketComponent = () => {
     }
   }, [lastMessage]);
 
-  // Function to send a message
-  // const handleClickSendMessage = () => {
-  //   sendMessage('Hello, WebSocket!');
-  // };
-
   // Determine the connection status
   const connectionStatus = {
-    [ReadyState.CONNECTING]: 'Connecting',
-    [ReadyState.OPEN]: 'Open',
-    [ReadyState.CLOSING]: 'Closing',
-    [ReadyState.CLOSED]: 'Closed',
-  }[readyState] || 'Unknown';
+    [WebSocket.CONNECTING]: 'Connecting',
+    [WebSocket.OPEN]: 'Open',
+    [WebSocket.CLOSING]: 'Closing',
+    [WebSocket.CLOSED]: 'Closed',
+    [ReadyState.UNINSTANTIATED]:  'Uninitiated',
+  }
+
+
+  React.useEffect(() => {
+    if (lastMessage !== null) {
+      console.log('Received message:', lastMessage.data);
+      const parsed = JSON.parse(lastMessage.data);
+      console.log(parsed)
+    }
+  }, [lastMessage]);
 
   return (
     <div>
-      {/* <button onClick={handleClickSendMessage}>Send Message</button> */}
-      <p>Connection Status: {connectionStatus}</p>
       {lastMessage ? <p>Last message: {lastMessage.data}</p> : null}
     </div>
   );

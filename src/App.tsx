@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./App.css";
 import RainScene from "./RainScene";
+import WebSocketComponent from "./components/WebSocket";
 
 type Environment = "clear" | "cloudy" | "rainy" | "snowy";
 type Time = "morning" | "afternoon" | "evening" | "night";
@@ -33,6 +34,7 @@ function App() {
         </div>
       </div>
       <RainScene environment={environment} time={time} />
+      <WebSocketComponent />
     </div>
   );
 }
