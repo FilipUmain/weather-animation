@@ -114,8 +114,6 @@ function App() {
         </div>
       </div>
       <RainScene environment={environment} time={time} data={parsedData}/>
-      <p>Connection Status: {connectionStatus}</p>
-      {lastMessage ? <p>Last message: {lastMessage.data}</p> : null}
     </div>
   );
 }
